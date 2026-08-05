@@ -1,5 +1,6 @@
+import { router } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import type { Listing } from "@/src/domain/entities/listing.entity";
 
@@ -15,7 +16,11 @@ export function ListingCard({ listing }: ListingCardProps) {
   const [isSaved, setIsSaved] = useState(false);
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={styles.card}
+      onPress={() => router.push(`/listing/${listing.id}`)}
+    >
       <Image source={{ uri: listing.imageUrl }} style={styles.image} />
 
       <View style={styles.content}>
@@ -61,7 +66,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

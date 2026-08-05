@@ -1,17 +1,25 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-export function SearchBar() {
+interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+}
+
+export function SearchBar({ value, onChangeText }: SearchBarProps) {
   return (
     <View style={styles.container}>
       <Text accessibilityElementsHidden style={styles.icon}>
         ⌕
       </Text>
+
       <TextInput
         accessibilityLabel="Buscar un servicio"
         placeholder="Buscar un servicio..."
         placeholderTextColor="#94A3B8"
         returnKeyType="search"
         style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
       />
     </View>
   );

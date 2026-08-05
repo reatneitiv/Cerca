@@ -11,6 +11,7 @@ import { getListingsUseCase } from "@/src/shared/container/container";
 
 export default function HomeScreen() {
   const [listings, setListings] = useState<Listing[]>([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const loadListings = async () => {
@@ -21,11 +22,15 @@ export default function HomeScreen() {
     loadListings();
   }, []);
 
+  const filteredListings = listings.filter((listing) =>
+    listing.title.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={listings}
+        data={filteredListings}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         keyExtractor={(listing) => listing.id}
         ListHeaderComponent={
@@ -36,9 +41,12 @@ export default function HomeScreen() {
             </Text>
 
             <View style={styles.searchSection}>
-              <SearchBar />
+              <SearchBar
+                value={search}
+                onChangeText={setSearch}
+              />
               <View style={styles.buttonSpacing}>
-                <PrimaryButton />
+                <PrimaryButton title="Explorar servicios" />
               </View>
             </View>
 
@@ -48,7 +56,7 @@ export default function HomeScreen() {
                 <Text style={styles.sectionSubtitle}>Profesionales cerca de ti</Text>
               </View>
               <View style={styles.countBadge}>
-                <Text style={styles.countText}>{listings.length}</Text>
+                <Text style={styles.countText}>{filteredListings.length}</Text>
               </View>
             </View>
           </View>
