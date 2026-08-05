@@ -1,0 +1,14 @@
+{
+  "app": {
+    "welcome": "Welcome",
+    "error_generic": "Something went wrong"
+  },
+  "review": {
+    "blocked": {
+      "not_your_booking": "You cannot review a booking you did not make.",
+      "not_completed": "You can only review completed bookings.",
+      "already_reviewed": "You have already reviewed this booking.",
+      "window_closed": "The review window has closed."
+    }
+  }
+}
