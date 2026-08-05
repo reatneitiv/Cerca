@@ -1,15 +1,17 @@
 import { Pressable, StyleSheet, Text } from "react-native";
 
-export function PrimaryButton() {
+interface PrimaryButtonProps {
+  title: string;
+  onPress?: () => void;
+}
+
+export function PrimaryButton({
+  title,
+  onPress,
+}: PrimaryButtonProps) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => {
-        // TODO: conectar búsqueda
-      }}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-    >
-      <Text style={styles.label}>Explorar servicios</Text>
+    <Pressable onPress={onPress} style={styles.button}>
+      <Text style={styles.label}>{title}</Text>
       <Text style={styles.arrow}>→</Text>
     </Pressable>
   );

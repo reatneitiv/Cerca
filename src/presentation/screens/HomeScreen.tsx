@@ -38,7 +38,7 @@ export default function HomeScreen() {
             <View style={styles.searchSection}>
               <SearchBar />
               <View style={styles.buttonSpacing}>
-                <PrimaryButton />
+                <PrimaryButton title="Solicitar servicio" />
               </View>
             </View>
 
