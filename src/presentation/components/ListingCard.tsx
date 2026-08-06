@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 
 import type { Listing } from "@/src/domain/entities/listing.entity";
 
@@ -14,12 +15,18 @@ const priceFormatter = new Intl.NumberFormat("es-CO", {
 
 export function ListingCard({ listing }: ListingCardProps) {
   const [isSaved, setIsSaved] = useState(false);
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push(`/listing/${listing.id}`);
+  };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={styles.card}
-      onPress={() => router.push(`/listing/${listing.id}`)}
+    <Pressable
+      accessibilityLabel={`Ver detalles de ${listing.title}`}
+      accessibilityRole="button"
+      onPress={handlePress}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       <Image source={{ uri: listing.imageUrl }} style={styles.image} />
 
@@ -31,7 +38,10 @@ export function ListingCard({ listing }: ListingCardProps) {
             accessibilityRole="button"
             accessibilityState={{ selected: isSaved }}
             hitSlop={8}
-            onPress={() => setIsSaved((currentValue) => !currentValue)}
+            onPress={(event) => {
+              event.stopPropagation();
+              setIsSaved((currentValue) => !currentValue);
+            }}
             style={({ pressed }) => [
               styles.saveButton,
               isSaved && styles.saveButtonActive,
@@ -66,7 +76,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -83,6 +93,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 3,
+  },
+  cardPressed: {
+    opacity: 0.85,
   },
   image: {
     backgroundColor: "#E2E8F0",

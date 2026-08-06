@@ -10,14 +10,7 @@ export function PrimaryButton({
   onPress,
 }: PrimaryButtonProps) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        pressed && styles.pressed,
-      ]}
-    >
+    <Pressable onPress={onPress} style={styles.button}>
       <Text style={styles.label}>{title}</Text>
       <Text style={styles.arrow}>→</Text>
     </Pressable>

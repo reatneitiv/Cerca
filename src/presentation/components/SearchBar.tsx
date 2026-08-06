@@ -14,12 +14,13 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
 
       <TextInput
         accessibilityLabel="Buscar un servicio"
+        autoCorrect={false}
+        onChangeText={onChangeText}
         placeholder="Buscar un servicio..."
         placeholderTextColor="#94A3B8"
         returnKeyType="search"
         style={styles.input}
         value={value}
-        onChangeText={onChangeText}
       />
     </View>
   );

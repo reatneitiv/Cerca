@@ -9,9 +9,17 @@ import { PrimaryButton } from "@/src/presentation/components/PrimaryButton";
 import { SearchBar } from "@/src/presentation/components/SearchBar";
 import { getListingsUseCase } from "@/src/shared/container/container";
 
+function normalize(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // quita tildes para que "electricista" matchee con "eléctrico", etc.
+}
+
 export default function HomeScreen() {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const loadListings = async () => {
@@ -22,9 +30,10 @@ export default function HomeScreen() {
     loadListings();
   }, []);
 
-  const filteredListings = listings.filter((listing) =>
-    listing.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedQuery = normalize(searchQuery);
+  const filteredListings = normalizedQuery
+    ? listings.filter((listing) => normalize(listing.title).startsWith(normalizedQuery))
+    : listings;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
@@ -33,6 +42,11 @@ export default function HomeScreen() {
         data={filteredListings}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         keyExtractor={(listing) => listing.id}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            No encontramos servicios que empiecen por "{searchQuery}".
+          </Text>
+        }
         ListHeaderComponent={
           <View>
             <Header />
@@ -41,12 +55,9 @@ export default function HomeScreen() {
             </Text>
 
             <View style={styles.searchSection}>
-              <SearchBar
-                value={search}
-                onChangeText={setSearch}
-              />
+              <SearchBar onChangeText={setSearchQuery} value={searchQuery} />
               <View style={styles.buttonSpacing}>
-                <PrimaryButton title="Explorar servicios" />
+                <PrimaryButton title="Solicitar servicio" />
               </View>
             </View>
 
@@ -128,5 +139,11 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 14,
+  },
+  emptyText: {
+    color: "#64748B",
+    fontSize: 14,
+    marginTop: 24,
+    textAlign: "center",
   },
 });
