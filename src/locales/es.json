@@ -1,0 +1,14 @@
+{
+  "app": {
+    "welcome": "Bienvenido",
+    "error_generic": "Algo salió mal"
+  },
+  "review": {
+    "blocked": {
+      "not_your_booking": "No puedes reseñar una reserva que no hiciste.",
+      "not_completed": "Solo puedes reseñar reservas completadas.",
+      "already_reviewed": "Ya reseñaste esta reserva.",
+      "window_closed": "La ventana para reseñas ha cerrado."
+    }
+  }
+}
