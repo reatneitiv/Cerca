@@ -11,6 +11,7 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
       <Text accessibilityElementsHidden style={styles.icon}>
         ⌕
       </Text>
+
       <TextInput
         accessibilityLabel="Buscar un servicio"
         autoCorrect={false}
