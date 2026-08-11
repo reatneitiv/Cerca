@@ -1,3 +1,9 @@
-import HomeScreen from "@/src/presentation/screens/HomeScreen";
+import { Text, View } from "react-native";
 
-export default HomeScreen;
+export default function Index() {
+  return (
+    <View>
+      <Text>Cerca</Text>
+    </View>
+  );
+}
