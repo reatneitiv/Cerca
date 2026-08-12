@@ -7,6 +7,7 @@ import type {
   ListingDetail,
   ListingStatus,
 } from "@/domain/entities/listing.entity";
+import { appColors } from "@/shared/colors";
 import { getListingByIdUseCase } from "@/shared/container/container";
 
 const minorUnits: Record<string, number> = {
@@ -71,7 +72,7 @@ export default function ListingDetailScreen() {
         options={{ title: listing?.title ?? "Detalle del servicio" }}
       />
       <ScrollView
-        className="flex-1 bg-[#F7FAFC]"
+        className="flex-1 bg-app-background"
         showsVerticalScrollIndicator={false}
       >
         <View className="p-5">
@@ -86,13 +87,13 @@ export default function ListingDetailScreen() {
           {!loading && !error && listing && (
             <>
               <View className="rounded-[18px] bg-white p-[18px] shadow-sm">
-                <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#087F5B]">
+                <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-app-primary">
                   {statusLabels[listing.status]}
                 </Text>
-                <Text className="mt-2 text-2xl font-bold text-[#102A43]">
+                <Text className="mt-2 text-2xl font-bold text-app-heading">
                   {listing.title}
                 </Text>
-                <Text className="mt-3 text-xl font-semibold text-[#087F5B]">
+                <Text className="mt-3 text-xl font-semibold text-app-primary">
                   {formatPrice(listing.priceFrom)}
                 </Text>
                 <View className="mt-4 flex-row items-center">
@@ -101,7 +102,7 @@ export default function ListingDetailScreen() {
                       key={star}
                       name={star <= roundedRating ? "star" : "star-outline"}
                       size={18}
-                      color="#F59E0B"
+                      color={appColors.warning}
                     />
                   ))}
                   <Text className="ml-2 text-sm text-slate-500">
@@ -111,10 +112,10 @@ export default function ListingDetailScreen() {
                 </View>
               </View>
               <View className="mt-[18px] rounded-[18px] bg-white p-[18px] shadow-sm">
-                <Text className="mb-2.5 text-lg font-bold text-[#102A43]">
+                <Text className="mb-2.5 text-lg font-bold text-app-heading">
                   Acerca del servicio
                 </Text>
-                <Text className="text-[15px] leading-6 text-[#52606D]">
+                <Text className="text-[15px] leading-6 text-app-body">
                   {listing.description}
                 </Text>
               </View>

@@ -81,7 +81,7 @@ export default function HomeScreen() {
   }, [coordinates, searchQuery]);
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-[#F7FAFC]">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-app-background">
       <FlatList
         data={listings}
         keyExtractor={(listing) => listing.id}
@@ -95,13 +95,13 @@ export default function HomeScreen() {
               Encuentra el servicio que necesitas, justo donde estás.
             </Text>
 
-            <View className="mt-6 rounded-[24px] bg-[#EAF8F3] p-3.5">
+            <View className="mt-6 rounded-[24px] bg-app-muted-background p-3.5">
               <SearchBar onChangeText={setSearchQuery} value={searchQuery} />
             </View>
 
             <View className="mb-1 mt-7 flex-row items-center justify-between">
               <View>
-                <Text className="text-[20px] font-extrabold tracking-[-0.4px] text-[#102A43]">
+                <Text className="text-[20px] font-extrabold tracking-[-0.4px] text-app-heading">
                   Servicios disponibles
                 </Text>
 
@@ -110,8 +110,8 @@ export default function HomeScreen() {
                 </Text>
               </View>
 
-              <View className="h-7 min-w-7 items-center justify-center rounded-[14px] bg-[#DDF5ED] px-2">
-                <Text className="text-xs font-extrabold text-[#087F5B]">
+              <View className="h-7 min-w-7 items-center justify-center rounded-[14px] bg-app-primary-soft px-2">
+                <Text className="text-xs font-extrabold text-app-primary">
                   {listings.length}
                 </Text>
               </View>
