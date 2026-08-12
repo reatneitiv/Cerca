@@ -1,50 +1,23 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export function Header() {
   return (
-    <View style={styles.container}>
+    <View className="flex-row items-center justify-between">
       <View>
-        <Text style={styles.eyebrow}>SERVICIOS CERCA DE TI</Text>
-        <Text style={styles.title}>Cerca</Text>
+        <Text className="mb-[3px] text-[11px] font-bold tracking-[1.2px] text-slate-500">
+          SERVICIOS CERCA DE TI
+        </Text>
+
+        <Text className="text-[34px] font-extrabold tracking-[-1px] text-[#102A43]">
+          Cerca
+        </Text>
       </View>
 
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>C</Text>
+      <View className="h-[46px] w-[46px] items-center justify-center rounded-full bg-[#DDF5ED]">
+        <Text className="text-[18px] font-extrabold text-[#087F5B]">
+          C
+        </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  eyebrow: {
-    color: "#64748B",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    marginBottom: 3,
-  },
-  title: {
-    color: "#102A43",
-    fontSize: 34,
-    fontWeight: "800",
-    letterSpacing: -1,
-  },
-  avatar: {
-    alignItems: "center",
-    backgroundColor: "#DDF5ED",
-    borderRadius: 23,
-    height: 46,
-    justifyContent: "center",
-    width: 46,
-  },
-  avatarText: {
-    color: "#087F5B",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-});

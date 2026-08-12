@@ -1,183 +1,70 @@
-import { PrimaryButton } from "@/src/presentation/components/PrimaryButton";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
-import type { Listing } from "@/src/domain/entities/listing.entity";
+import type { ListingDetail, ListingStatus } from "@/src/domain/entities/listing.entity";
 import { getListingByIdUseCase } from "@/src/shared/container/container";
 
-export default function ListingDetailScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
+const minorUnits: Record<string, number> = { COP: 0, CLP: 0, JPY: 0, USD: 2, EUR: 2, GBP: 2, MXN: 2, BRL: 2, KWD: 3 };
+const statusLabels: Record<ListingStatus, string> = { draft: "Borrador", published: "Publicado", paused: "Pausado", under_review: "En revisión", removed: "Retirado" };
 
-    const [listing, setListing] = useState<Listing | null>(null);
-
-    useEffect(() => {
-        const load = async () => {
-            if (!id) return;
-
-            const data = await getListingByIdUseCase.execute(id);
-            setListing(data);
-        };
-
-        load();
-    }, [id]);
-
-    return (
-        <>
-            <Stack.Screen
-                options={{
-                    title: listing?.title ?? "Detalle del servicio",
-                }}
-            />
-
-            <ScrollView
-                style={styles.container}
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-                {listing ? (
-                    <>
-                        <Image
-                            source={{ uri: listing.imageUrl }}
-                            style={styles.image}
-                        />
-
-                        <Text style={styles.title}>
-                            {listing.title}
-                        </Text>
-
-                        <Text style={styles.price}>
-                            {listing.price.amount} {listing.price.currency}
-                        </Text>
-
-                        <View style={styles.badges}>
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                    {listing.distance}
-                                </Text>
-                            </View>
-
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                    🟢 Disponible ahora
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>
-                                Acerca del servicio
-                            </Text>
-
-                            <Text style={styles.description}>
-                                Profesional especializado en reparación de fugas,
-                                instalación de tuberías, mantenimiento preventivo
-                                y atención de emergencias.
-                            </Text>
-                        </View>
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>
-                                Servicios incluidos
-                            </Text>
-
-                            <Text style={styles.service}>✔ Reparación de fugas</Text>
-                            <Text style={styles.service}>✔ Destape de tuberías</Text>
-                            <Text style={styles.service}>✔ Instalación de sanitarios</Text>
-                            <Text style={styles.service}>✔ Cambio de grifería</Text>
-                        </View>
-
-                        <View style={{ marginTop: 24 }}>
-                            <PrimaryButton title="Solicitar servicio" />
-                        </View>
-                    </>
-                ) : (
-                    <Text>Cargando...</Text>
-                )}
-            </ScrollView>
-        </>
-    );
+function formatPrice(price: ListingDetail["priceFrom"]): string {
+  if (!price) return "Precio por cotizar";
+  const digits = minorUnits[price.currency] ?? 2;
+  return new Intl.NumberFormat("es-CO", { style: "currency", currency: price.currency, maximumFractionDigits: digits }).format(price.amountMinor / 10 ** digits);
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F7FAFC",
-    },
+export default function ListingDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [listing, setListing] = useState<ListingDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    content: {
-        padding: 20,
-    },
+  useEffect(() => {
+    if (!id) {
+      setError("No se recibió el identificador del servicio.");
+      setLoading(false);
+      return;
+    }
 
-    title: {
-        fontSize: 24,
-        fontWeight: "700",
-        marginBottom: 12,
-        color: "#102A43",
-    },
+    getListingByIdUseCase.execute(id)
+      .then((data) => {
+        if (data) setListing(data);
+        else setError("No encontramos este servicio.");
+      })
+      .catch(() => setError("No pudimos cargar el servicio."))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-    image: {
-        width: "100%",
-        height: 260,
-        borderRadius: 20,
-        marginBottom: 20,
-    },
+  const roundedRating = listing ? Math.round(Math.max(0, Math.min(5, listing.ratingAvg))) : 0;
 
-    price: {
-        fontSize: 20,
-        fontWeight: "600",
-        color: "#087F5B",
-        marginBottom: 8,
-    },
-
-    badges: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        marginTop: 10,
-        marginBottom: 24,
-        gap: 10,
-    },
-
-    badge: {
-        backgroundColor: "#EAF7F2",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-
-    badgeText: {
-        color: "#087F5B",
-        fontWeight: "600",
-        fontSize: 13,
-    },
-
-    section: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 18,
-        padding: 18,
-        marginBottom: 18,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#102A43",
-        marginBottom: 10,
-    },
-
-    description: {
-        fontSize: 15,
-        lineHeight: 24,
-        color: "#52606D",
-    },
-
-    service: {
-        fontSize: 15,
-        color: "#334E68",
-        marginBottom: 8,
-    },
-});
+  return (
+    <>
+      <Stack.Screen options={{ title: listing?.title ?? "Detalle del servicio" }} />
+      <ScrollView className="flex-1 bg-[#F7FAFC]" showsVerticalScrollIndicator={false}>
+        <View className="p-5">
+          {loading && <Text className="mt-6 text-center text-slate-500">Cargando servicio...</Text>}
+          {!loading && error && <Text className="mt-6 text-center text-red-500">{error}</Text>}
+          {!loading && !error && listing && (
+            <>
+              <View className="rounded-[18px] bg-white p-[18px] shadow-sm">
+                <Text className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#087F5B]">{statusLabels[listing.status]}</Text>
+                <Text className="mt-2 text-2xl font-bold text-[#102A43]">{listing.title}</Text>
+                <Text className="mt-3 text-xl font-semibold text-[#087F5B]">{formatPrice(listing.priceFrom)}</Text>
+                <View className="mt-4 flex-row items-center">
+                  {[1, 2, 3, 4, 5].map((star) => <Ionicons key={star} name={star <= roundedRating ? "star" : "star-outline"} size={18} color="#F59E0B" />)}
+                  <Text className="ml-2 text-sm text-slate-500">{listing.ratingAvg.toFixed(1)} ({listing.ratingCount} reseñas)</Text>
+                </View>
+              </View>
+              <View className="mt-[18px] rounded-[18px] bg-white p-[18px] shadow-sm">
+                <Text className="mb-2.5 text-lg font-bold text-[#102A43]">Acerca del servicio</Text>
+                <Text className="text-[15px] leading-6 text-[#52606D]">{listing.description}</Text>
+              </View>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </>
+  );
+}

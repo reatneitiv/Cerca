@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, Text } from "react-native";
 
 interface PrimaryButtonProps {
   title: string;
@@ -10,39 +10,13 @@ export function PrimaryButton({
   onPress,
 }: PrimaryButtonProps) {
   return (
-    <Pressable onPress={onPress} style={styles.button}>
-      <Text style={styles.label}>{title}</Text>
-      <Text style={styles.arrow}>→</Text>
+    <Pressable
+      onPress={onPress}
+      className="min-h-14 flex-row items-center justify-center rounded-2xl bg-primary shadow-md active:opacity-90"
+    >
+      <Text className="text-base font-bold text-white">
+        {title}
+      </Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    alignItems: "center",
-    backgroundColor: "#087F5B",
-    borderRadius: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    minHeight: 56,
-    shadowColor: "#087F5B",
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  pressed: {
-    opacity: 0.9,
-  },
-  label: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  arrow: {
-    color: "#FFFFFF",
-    fontSize: 21,
-    marginLeft: 10,
-    marginTop: -1,
-  },
-});
