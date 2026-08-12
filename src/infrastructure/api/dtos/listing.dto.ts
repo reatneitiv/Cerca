@@ -1,4 +1,4 @@
-import type { ListingStatus } from "@/src/domain/entities/listing.entity";
+import type { ListingStatus } from "@/domain/entities/listing.entity";
 
 export type ListingStatusApi = ListingStatus;
 export interface MoneyApiResponse { amountMinor: number; currency: string; }

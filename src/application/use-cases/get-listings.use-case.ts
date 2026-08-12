@@ -1,4 +1,4 @@
-import type { ListingSearchParams, ListingRepository } from "@/src/domain/repositories/listing.repository";
+import type { ListingSearchParams, ListingRepository } from "@/domain/repositories/listing.repository";
 
 export class GetListingsUseCase {
   constructor(private readonly listingRepository: ListingRepository) {}

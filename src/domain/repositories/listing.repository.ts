@@ -1,4 +1,4 @@
-import type { ListingDetail, ListingSummary } from "@/src/domain/entities/listing.entity";
+import type { ListingDetail, ListingSummary } from "@/domain/entities/listing.entity";
 
 export interface ListingSearchParams {
   readonly lat: number;

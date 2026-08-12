@@ -1,9 +1,9 @@
-import type { ListingDetail, ListingSummary } from "@/src/domain/entities/listing.entity";
-import type { ListingRepository as ListingRepositoryContract, ListingSearchParams } from "@/src/domain/repositories/listing.repository";
-import { ApiClient } from "@/src/infrastructure/api/api-client";
-import type { ListingApiResponse, ListingListApiResponse } from "@/src/infrastructure/api/dtos/listing.dto";
-import { ListingMapper } from "@/src/infrastructure/api/mappers/listing.mapper";
-import { API_BASE_URL } from "@/src/infrastructure/config/api.config";
+import type { ListingDetail, ListingSummary } from "@/domain/entities/listing.entity";
+import type { ListingRepository as ListingRepositoryContract, ListingSearchParams } from "@/domain/repositories/listing.repository";
+import { ApiClient } from "@/infrastructure/api/api-client";
+import type { ListingApiResponse, ListingListApiResponse } from "@/infrastructure/api/dtos/listing.dto";
+import { ListingMapper } from "@/infrastructure/api/mappers/listing.mapper";
+import { API_BASE_URL } from "@/infrastructure/config/api.config";
 
 export class ApiListingRepository implements ListingRepositoryContract {
   private readonly apiClient = new ApiClient(API_BASE_URL);

@@ -1,4 +1,4 @@
-import type { Coordinates } from "@/src/domain/repositories/location.repository";
+import type { Coordinates } from "@/domain/repositories/location.repository";
 
 const latitude = Number(process.env.EXPO_PUBLIC_DEV_SEARCH_LAT);
 const longitude = Number(process.env.EXPO_PUBLIC_DEV_SEARCH_LNG);

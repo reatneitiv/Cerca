@@ -1,4 +1,4 @@
-import type { ListingRepository } from "@/src/domain/repositories/listing.repository";
+import type { ListingRepository } from "@/domain/repositories/listing.repository";
 
 export class GetListingByIdUseCase {
   constructor(private readonly repository: ListingRepository) {}
