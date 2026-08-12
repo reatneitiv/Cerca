@@ -1,9 +1,4 @@
-import { Text, View } from "react-native";
-
+import SignInRoute from "../(auth)/sign.in";
 export default function Index() {
-  return (
-    <View>
-      <Text>Cerca</Text>
-    </View>
-  );
+  return <SignInRoute />;
 }
