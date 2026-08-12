@@ -1,4 +1,4 @@
 export interface Money {
-  readonly amount: number;
+  readonly amountMinor: number;
   readonly currency: string;
 }
