@@ -1,7 +1,5 @@
-// src/infrastructure/http/FetchHttpClient.ts
-
+import * as SecureStore from "expo-secure-store";
 import type { HttpClient } from "./HttpClient";
-import * as SecureStore from 'expo-secure-store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -30,15 +28,15 @@ async function parseJsonSafe(response: Response) {
 
 export class FetchHttpClient implements HttpClient {
   async get<T>(path: string): Promise<T> {
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await SecureStore.getItemAsync("accessToken");
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await fetch(`${API_URL}${path}`, { headers });
 
     if (!response.ok) {
       const body = await parseJsonSafe(response);
       if (response.status === 401) {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync("accessToken");
+        await SecureStore.deleteItemAsync("refreshToken");
       }
       throw new HttpError(response.status, body);
     }
@@ -47,8 +45,10 @@ export class FetchHttpClient implements HttpClient {
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {
-    const token = await SecureStore.getItemAsync('accessToken');
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = await SecureStore.getItemAsync("accessToken");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${API_URL}${path}`, {
       method: "POST",
@@ -59,8 +59,8 @@ export class FetchHttpClient implements HttpClient {
     if (!response.ok) {
       const parsed = await parseJsonSafe(response);
       if (response.status === 401) {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync("accessToken");
+        await SecureStore.deleteItemAsync("refreshToken");
       }
       throw new HttpError(response.status, parsed);
     }
@@ -69,8 +69,10 @@ export class FetchHttpClient implements HttpClient {
   }
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
-    const token = await SecureStore.getItemAsync('accessToken');
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = await SecureStore.getItemAsync("accessToken");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${API_URL}${path}`, {
       method: "PATCH",
@@ -81,8 +83,8 @@ export class FetchHttpClient implements HttpClient {
     if (!response.ok) {
       const parsed = await parseJsonSafe(response);
       if (response.status === 401) {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync("accessToken");
+        await SecureStore.deleteItemAsync("refreshToken");
       }
       throw new HttpError(response.status, parsed);
     }
@@ -91,7 +93,7 @@ export class FetchHttpClient implements HttpClient {
   }
 
   async delete<T>(path: string): Promise<T> {
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await SecureStore.getItemAsync("accessToken");
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await fetch(`${API_URL}${path}`, {
       method: "DELETE",
@@ -101,8 +103,8 @@ export class FetchHttpClient implements HttpClient {
     if (!response.ok) {
       const parsed = await parseJsonSafe(response);
       if (response.status === 401) {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync("accessToken");
+        await SecureStore.deleteItemAsync("refreshToken");
       }
       throw new HttpError(response.status, parsed);
     }
