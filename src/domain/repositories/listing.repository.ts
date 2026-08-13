@@ -6,9 +6,16 @@ export interface ListingSearchParams {
   readonly query?: string;
   readonly radiusKm?: number;
   readonly limit?: number;
+  readonly cursor?: string;
+  readonly categoryId?: string;
+}
+
+export interface ListingPage {
+  readonly items: ListingSummary[];
+  readonly nextCursor: string | null;
 }
 
 export interface ListingRepository {
-  findAll(params: ListingSearchParams): Promise<ListingSummary[]>;
+  findAll(params: ListingSearchParams): Promise<ListingPage>;
   findById(id: string): Promise<ListingDetail | null>;
 }

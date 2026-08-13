@@ -34,3 +34,8 @@ export interface ListingDetail {
   readonly ratingCount: number;
   readonly createdAt: string;
 }
+
+export interface PaginatedResponse<T> {
+  readonly items: T[];
+  readonly nextCursor?: string | null;
+}

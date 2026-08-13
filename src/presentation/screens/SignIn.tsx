@@ -24,16 +24,17 @@ export default function SignInScreen() {
   const router = useRouter();
 
   const submit = async () => {
+    setError(null);
     setLoading(true);
     try {
       const client = new FetchHttpClient();
       const api = new AuthApi(client);
-      const input: SignInInput = { email, password };
+      const input: SignInInput = { email: email.trim(), password };
       const session = await api.signIn(input);
       await SecureStore.setItemAsync("accessToken", session.accessToken);
       await SecureStore.setItemAsync("refreshToken", session.refreshToken);
       console.log("signed in", session.actor);
-      router.push("/");
+      router.replace("/");
     } catch (e) {
       const parsed = parseApiError(e);
       if (
@@ -46,7 +47,7 @@ export default function SignInScreen() {
         setError(parsed.message);
       }
       setToast(parsed.message);
-      console.error(e);
+      console.warn("No se pudo iniciar sesión:", parsed.message);
     } finally {
       setLoading(false);
     }
