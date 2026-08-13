@@ -1,6 +1,11 @@
-import type { Money } from "@/src/domain/value-objects/money.value-object";
+import type { Money } from "@/domain/value-objects/money.value-object";
 
-export type ListingStatus = "draft" | "published" | "paused" | "under_review" | "removed";
+export type ListingStatus =
+  | "draft"
+  | "published"
+  | "paused"
+  | "under_review"
+  | "removed";
 
 export interface ListingSummary {
   readonly id: string;

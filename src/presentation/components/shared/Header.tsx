@@ -8,15 +8,13 @@ export function Header() {
           SERVICIOS CERCA DE TI
         </Text>
 
-        <Text className="text-[34px] font-extrabold tracking-[-1px] text-[#102A43]">
+        <Text className="text-[34px] font-extrabold tracking-[-1px] text-app-heading">
           Cerca
         </Text>
       </View>
 
-      <View className="h-[46px] w-[46px] items-center justify-center rounded-full bg-[#DDF5ED]">
-        <Text className="text-[18px] font-extrabold text-[#087F5B]">
-          C
-        </Text>
+      <View className="h-[46px] w-[46px] items-center justify-center rounded-full bg-app-primary-soft">
+        <Text className="text-[18px] font-extrabold text-app-primary">C</Text>
       </View>
     </View>
   );

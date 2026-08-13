@@ -1,3 +1,5 @@
-import HomeScreen from "@/src/presentation/screens/HomeScreen";
+import SignInRoute from "../(auth)/sign.in";
 
-export default HomeScreen;
+export default function Index() {
+  return <SignInRoute />;
+}

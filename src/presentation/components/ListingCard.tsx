@@ -1,13 +1,16 @@
+import type {
+  ListingStatus,
+  ListingSummary,
+} from "@/domain/entities/listing.entity";
+import { appColors } from "@/shared/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
-import type {ListingStatus,ListingSummary} from "@/src/domain/entities/listing.entity";
 
 interface ListingCardProps {
   listing: ListingSummary;
 }
 
-// Cantidad de decimales según la moneda
 const minorUnits: Record<string, number> = {
   COP: 0,
   CLP: 0,
@@ -20,7 +23,6 @@ const minorUnits: Record<string, number> = {
   KWD: 3,
 };
 
-// Traduce el estado del listing
 const statusLabels: Record<ListingStatus, string> = {
   draft: "Borrador",
   published: "Publicado",
@@ -29,7 +31,6 @@ const statusLabels: Record<ListingStatus, string> = {
   removed: "Retirado",
 };
 
-// Formatea el precio
 function formatPrice(price: ListingSummary["priceFrom"]): string {
   if (!price) {
     return "Precio por cotizar";
@@ -44,7 +45,6 @@ function formatPrice(price: ListingSummary["priceFrom"]): string {
   }).format(price.amountMinor / 10 ** decimals);
 }
 
-// Formatea la distancia
 function formatDistance(distanceMeters: number): string {
   if (distanceMeters < 1000) {
     return `${Math.round(distanceMeters)} m`;
@@ -56,12 +56,8 @@ function formatDistance(distanceMeters: number): string {
 export function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
 
-  // Calcula las estrellas que se muestran
-  const filledStars = Math.round(
-    Math.max(0, Math.min(5, listing.ratingAvg))
-  );
+  const filledStars = Math.round(Math.max(0, Math.min(5, listing.ratingAvg)));
 
-  // Abre los detalles del listing
   function handlePress() {
     router.push(`/listing/${listing.id}`);
   }
@@ -73,10 +69,9 @@ export function ListingCard({ listing }: ListingCardProps) {
       onPress={handlePress}
       className="rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm active:opacity-85"
     >
-      {/* Título y distancia */}
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-[11px] font-bold uppercase tracking-[0.25px] text-emerald-700">
+          <Text className="text-[11px] font-bold uppercase tracking-[0.25px] text-app-primary">
             {statusLabels[listing.status]}
           </Text>
 
@@ -89,7 +84,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         </View>
 
         <View className="flex-row items-center rounded-[10px] bg-slate-100 px-2 py-1">
-          <Ionicons name="location" size={13} color="#047857" />
+          <Ionicons name="location" size={13} color={appColors.primaryDark} />
 
           <Text className="ml-1 text-[11px] font-bold text-slate-600">
             {formatDistance(listing.distanceMeters)}
@@ -97,7 +92,6 @@ export function ListingCard({ listing }: ListingCardProps) {
         </View>
       </View>
 
-      {/* Precio y calificación */}
       <View className="mt-3 flex-row items-center justify-between">
         <View>
           <Text className="text-[9px] font-extrabold uppercase tracking-[0.8px] text-slate-400">
@@ -110,14 +104,13 @@ export function ListingCard({ listing }: ListingCardProps) {
         </View>
 
         <View className="items-end">
-          {/* Estrellas */}
           <View className="flex-row">
             {[1, 2, 3, 4, 5].map((star) => (
               <Ionicons
                 key={star}
                 name={star <= filledStars ? "star" : "star-outline"}
                 size={15}
-                color="#F59E0B"
+                color={appColors.warning}
               />
             ))}
           </View>

@@ -1,3 +1,4 @@
+import { appColors } from "@/shared/colors";
 import { Text, TextInput, View } from "react-native";
 
 interface SearchBarProps {
@@ -10,7 +11,7 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
     <View className="min-h-14 flex-row items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-sm">
       <Text
         accessibilityElementsHidden
-        className="mr-2.5 text-[27px] leading-[29px] text-emerald-700"
+        className="mr-2.5 text-[27px] leading-[29px] text-app-primary"
       >
         ⌕
       </Text>
@@ -20,7 +21,7 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
         autoCorrect={false}
         onChangeText={onChangeText}
         placeholder="Buscar un servicio..."
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor={appColors.textMuted}
         returnKeyType="search"
         className="flex-1 py-0 text-base text-slate-900"
         value={value}

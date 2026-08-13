@@ -1,5 +1,5 @@
-import type { ListingDetail, ListingSummary } from "@/src/domain/entities/listing.entity";
-import type { ListingApiResponse, ListingSearchItemApiResponse, MoneyApiResponse } from "@/src/infrastructure/api/dtos/listing.dto";
+import type { ListingDetail, ListingSummary } from "@/domain/entities/listing.entity";
+import type { ListingApiResponse, ListingSearchItemApiResponse, MoneyApiResponse } from "@/infrastructure/api/dtos/listing.dto";
 
 function toMoney(money: MoneyApiResponse | null) {
   return money ? { amountMinor: money.amountMinor, currency: money.currency } : null;

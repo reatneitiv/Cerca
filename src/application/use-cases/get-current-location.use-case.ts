@@ -1,4 +1,4 @@
-import type { Coordinates, LocationRepository } from "@/src/domain/repositories/location.repository";
+import type { Coordinates, LocationRepository } from "@/domain/repositories/location.repository";
 
 export class GetCurrentLocationUseCase {
   constructor(private readonly locationRepository: LocationRepository) {}

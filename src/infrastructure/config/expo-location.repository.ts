@@ -1,7 +1,7 @@
 import * as Location from "expo-location";
 
-import type { Coordinates } from "@/src/domain/repositories/location.repository";
-import type { LocationRepository } from "@/src/domain/repositories/location.repository";
+import type { Coordinates } from "@/domain/repositories/location.repository";
+import type { LocationRepository } from "@/domain/repositories/location.repository";
 
 export class ExpoLocationRepository implements LocationRepository {
   async getCurrentCoordinates(): Promise<Coordinates> {
