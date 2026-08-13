@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs, Slot, useRouter } from 'expo-router';
+import { Slot, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { View, ActivityIndicator } from 'react-native';
 
-export default function TabLayout() {
+export default function AuthLayout() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
@@ -13,13 +13,13 @@ export default function TabLayout() {
       try {
         const token = await SecureStore.getItemAsync('accessToken');
         if (!mounted) return;
-        if (!token) {
-          router.replace('/sign-in');
+        if (token) {
+          router.replace('/');
         } else {
           setChecking(false);
         }
       } catch (_e) {
-        if (mounted) router.replace('/sign-in');
+        if (mounted) setChecking(false);
       }
     })();
 
@@ -34,14 +34,5 @@ export default function TabLayout() {
     </View>
   );
 
-  return (
-    <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Inicio",
-        }}
-      />
-    </Tabs>
-  );
+  return <Slot />;
 }

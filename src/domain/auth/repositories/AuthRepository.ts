@@ -8,6 +8,8 @@ export interface SignInInput {
 export interface SignUpInput {
   email: string;
   password: string;
+  displayName?: string;
+  capacities?: string[];
 }
 
 export interface AuthRepository {
