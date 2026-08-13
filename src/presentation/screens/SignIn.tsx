@@ -1,10 +1,66 @@
+import type { SignInInput } from "@/domain/auth/repositories/AuthRepository";
+import { AuthApi } from "@/infrastructure/auth/api/AuthApi";
+import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import { InputPer } from "@/presentation/components/shared/Input";
-import { Text, View } from "react-native";
+import { parseApiError } from "@/presentation/utils/parseApiError";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { useState } from "react";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
+  const router = useRouter();
+
+  const submit = async () => {
+    setLoading(true);
+    try {
+      const client = new FetchHttpClient();
+      const api = new AuthApi(client);
+      const input: SignInInput = { email, password };
+      const session = await api.signIn(input);
+      await SecureStore.setItemAsync("accessToken", session.accessToken);
+      await SecureStore.setItemAsync("refreshToken", session.refreshToken);
+      console.log("signed in", session.actor);
+      router.push("/");
+    } catch (e) {
+      const parsed = parseApiError(e);
+      if (
+        parsed.fieldErrors &&
+        parsed.fieldErrors.password &&
+        parsed.fieldErrors.password.length > 0
+      ) {
+        setError(parsed.fieldErrors.password[0]);
+      } else {
+        setError(parsed.message);
+      }
+      setToast(parsed.message);
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-app-background">
+      {toast ? (
+        <View className="absolute top-4 left-4 right-4 z-50 items-center">
+          <View className="bg-black/80 rounded-md px-4 py-2">
+            <Text className="text-white">{toast}</Text>
+          </View>
+        </View>
+      ) : null}
       <View className="flex-1 px-6">
         <View
           pointerEvents="none"
@@ -29,6 +85,8 @@ export default function SignInScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
               />
 
               <InputPer
@@ -36,7 +94,35 @@ export default function SignInScreen() {
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
+                value={password}
+                onChangeText={setPassword}
               />
+
+              <TouchableOpacity
+                className="mt-4 rounded-lg bg-app-primary p-3 items-center"
+                onPress={submit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold">
+                    Iniciar sesión
+                  </Text>
+                )}
+              </TouchableOpacity>
+              {error ? (
+                <Text className="text-red-500 mt-2">{error}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={() => router.push("/sign-up")}
+                className="mt-3 items-center"
+              >
+                <Text className="text-sm text-app-primary">
+                  ¿Aún no tienes una cuenta? Registrarse
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
