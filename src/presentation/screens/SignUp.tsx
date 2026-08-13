@@ -26,21 +26,23 @@ export default function SignUpScreen() {
   const router = useRouter();
 
   const submit = async () => {
+    setError(null);
     setLoading(true);
     try {
       const client = new FetchHttpClient();
       const api = new AuthApi(client);
+      const trimmedDisplayName = displayName.trim();
       const payload: SignUpInput = {
-        email,
+        email: email.trim(),
         password,
-        displayName,
+        ...(trimmedDisplayName ? { displayName: trimmedDisplayName } : {}),
         capacities: ["customer"],
       };
       const session = await api.signUp(payload);
       await SecureStore.setItemAsync("accessToken", session.accessToken);
       await SecureStore.setItemAsync("refreshToken", session.refreshToken);
       console.log("signed up", session.actor);
-      router.push("/");
+      router.replace("/");
     } catch (e) {
       const parsed = parseApiError(e);
       if (
@@ -53,7 +55,7 @@ export default function SignUpScreen() {
         setError(parsed.message);
       }
       setToast(parsed.message);
-      console.error(e);
+      console.warn("No se pudo crear la cuenta:", parsed.message);
     } finally {
       setLoading(false);
     }
