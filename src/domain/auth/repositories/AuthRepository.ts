@@ -14,10 +14,7 @@ export interface SignUpInput {
 
 export interface AuthRepository {
   signIn(input: SignInInput): Promise<AuthSession>;
-
   signUp(input: SignUpInput): Promise<AuthSession>;
-
   signOut(): Promise<void>;
-
   refresh(): Promise<AuthSession>;
 }

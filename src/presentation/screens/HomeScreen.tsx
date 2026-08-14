@@ -12,7 +12,6 @@ import { Header } from "@/presentation/components/shared/Header";
 import { CategoriesSection } from "@/presentation/components/CategoriesSection";
 import { ListingCard } from "@/presentation/components/ListingCard";
 import { SearchBar } from "@/presentation/components/shared/SearchBar";
-import LogoutButton from "@/presentation/components/LogoutButton";
 
 import { developmentSearchCoordinates } from "@//infrastructure/config/search-location.config";
 import { getCategoriesUseCase, getCurrentLocationUseCase, getListingsUseCase } from "@/shared/container/container";
@@ -160,10 +159,6 @@ export default function HomeScreen() {
         ListHeaderComponent={
           <View className="px-5 pb-4">
             <Header />
-
-            <View className="mt-2 flex-row justify-end px-1">
-              <LogoutButton />
-            </View>
 
             <Text className="mt-1.5 max-w-[300px] text-[15px] leading-[22px] text-slate-500">
               Encuentra el servicio que necesitas, justo donde estás.

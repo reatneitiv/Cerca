@@ -4,6 +4,7 @@ import type {
 } from "@/domain/auth/repositories/AuthRepository";
 
 import type { AuthSession } from "@/domain/auth/entities/AuthSession";
+import type { Actor } from "@/domain/auth/entities/Actor";
 
 import type { HttpClient } from "@/infrastructure/http/HttpClient";
 
@@ -24,5 +25,13 @@ export class AuthApi {
 
   async refresh(): Promise<AuthSession> {
     return this.httpClient.post<AuthSession>("/v1/auth/refresh");
+  }
+
+  async getCurrentActor(): Promise<Actor> {
+    return this.httpClient.get<Actor>("/v1/me");
+  }
+
+  async becomeProvider(): Promise<Actor> {
+    return this.httpClient.post<Actor>("/v1/me/capacities/provider");
   }
 }
