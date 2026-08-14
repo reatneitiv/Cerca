@@ -6,6 +6,8 @@ import { appColors } from "@/shared/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
+import { canModerateListings } from "@/domain/auth/entities/Actor";
+import { useAuth } from "@/presentation/providers/AuthProvider";
 
 interface ListingCardProps {
   listing: ListingSummary;
@@ -55,11 +57,21 @@ function formatDistance(distanceMeters: number): string {
 
 export function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
+  const { actor } = useAuth();
+  const isModerator = actor ? canModerateListings(actor) : false;
 
   const filledStars = Math.round(Math.max(0, Math.min(5, listing.ratingAvg)));
 
   function handlePress() {
     router.push(`/listing/${listing.id}`);
+  }
+
+  function handleRequest() {
+    router.push({ pathname: "/listing/[id]", params: { id: listing.id, request: "1" } });
+  }
+
+  function handleModerate() {
+    router.push({ pathname: "/moderation", params: { listingId: listing.id } });
   }
 
   return (
@@ -81,14 +93,21 @@ export function ListingCard({ listing }: ListingCardProps) {
           >
             {listing.title}
           </Text>
+          {isModerator ? (
+            <Text selectable className="mt-1 text-[11px] text-slate-500">
+              ID: {listing.id}
+            </Text>
+          ) : null}
         </View>
 
-        <View className="flex-row items-center rounded-[10px] bg-slate-100 px-2 py-1">
-          <Ionicons name="location" size={13} color={appColors.primaryDark} />
+        <View className="flex-row items-center">
+          <View className="flex-row items-center rounded-[10px] bg-slate-100 px-2 py-1">
+            <Ionicons name="location" size={13} color={appColors.primaryDark} />
 
-          <Text className="ml-1 text-[11px] font-bold text-slate-600">
-            {formatDistance(listing.distanceMeters)}
-          </Text>
+            <Text className="ml-1 text-[11px] font-bold text-slate-600">
+              {formatDistance(listing.distanceMeters)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -116,10 +135,30 @@ export function ListingCard({ listing }: ListingCardProps) {
           </View>
 
           <Text className="mt-1 text-[11px] text-slate-500">
-            {listing.ratingCount} reseñas
+            {listing.ratingAvg.toFixed(1)} · {listing.ratingCount} {listing.ratingCount === 1 ? "reseña" : "reseñas"}
           </Text>
         </View>
       </View>
+
+      {isModerator ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Moderar ${listing.title}`}
+          onPress={handleModerate}
+          className="mt-4 items-center rounded-xl bg-[#EAF8F3] px-4 py-2.5 active:opacity-80"
+        >
+          <Text className="text-sm font-bold text-[#087F5B]">Moderar servicio</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Pedir ${listing.title}`}
+          onPress={handleRequest}
+          className="mt-4 items-center rounded-xl bg-[#EAF8F3] px-4 py-2.5 active:opacity-80"
+        >
+          <Text className="text-sm font-bold text-[#087F5B]">Pedir servicio</Text>
+        </Pressable>
+      )}
     </Pressable>
   );
 }

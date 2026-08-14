@@ -44,10 +44,11 @@ export class FetchHttpClient implements HttpClient {
     return response.json() as Promise<T>;
   }
 
-  async post<T>(path: string, body?: unknown): Promise<T> {
+  async post<T>(path: string, body?: unknown, extraHeaders?: Record<string, string>): Promise<T> {
     const token = await SecureStore.getItemAsync("accessToken");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      ...extraHeaders,
     };
     if (token) headers.Authorization = `Bearer ${token}`;
     const response = await fetch(`${API_URL}${path}`, {

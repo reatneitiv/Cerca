@@ -2,6 +2,7 @@ import type { SignInInput } from "@/domain/auth/repositories/AuthRepository";
 import { AuthApi } from "@/infrastructure/auth/api/AuthApi";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import { InputPer } from "@/presentation/components/shared/Input";
+import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_TOKEN, DEMO_MODERATOR_EMAIL, DEMO_MODERATOR_TOKEN, getLocalDemoAccounts } from "@/presentation/providers/AuthProvider";
 import { parseApiError } from "@/presentation/utils/parseApiError";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -27,6 +28,26 @@ export default function SignInScreen() {
     setError(null);
     setLoading(true);
     try {
+      if (email.trim().toLowerCase() === DEMO_MODERATOR_EMAIL && password === "Moderador123!") {
+        await SecureStore.setItemAsync("accessToken", DEMO_MODERATOR_TOKEN);
+        await SecureStore.deleteItemAsync("refreshToken");
+        router.replace("/");
+        return;
+      }
+      if (email.trim().toLowerCase() === DEMO_ADMIN_EMAIL && password === "Admin123!") {
+        await SecureStore.setItemAsync("accessToken", DEMO_ADMIN_TOKEN);
+        await SecureStore.deleteItemAsync("refreshToken");
+        router.replace("/");
+        return;
+      }
+      const localAccount = (await getLocalDemoAccounts()).find((account) => account.email.toLowerCase() === email.trim().toLowerCase() && account.password === password);
+      if (localAccount) {
+        await SecureStore.setItemAsync("accessToken", `cerca-local-account:${localAccount.id}`);
+        await SecureStore.deleteItemAsync("refreshToken");
+        router.replace("/");
+        return;
+      }
+
       const client = new FetchHttpClient();
       const api = new AuthApi(client);
       const input: SignInInput = { email: email.trim(), password };
