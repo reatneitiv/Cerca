@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { clearSession } from "@/infrastructure/auth/session/AuthSessionStorage";
 import React from "react";
 import { ActivityIndicator, Text, TouchableOpacity } from "react-native";
 
@@ -10,8 +10,7 @@ export default function LogoutButton(): React.ReactElement {
   async function handleLogout() {
     try {
       setLoading(true);
-      await SecureStore.deleteItemAsync("accessToken");
-      await SecureStore.deleteItemAsync("refreshToken");
+      await clearSession();
       router.replace("/sign-in");
     } finally {
       setLoading(false);

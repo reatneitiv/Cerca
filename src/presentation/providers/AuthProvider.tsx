@@ -1,5 +1,6 @@
 import type { Actor } from "@/domain/auth/entities/Actor";
 import { AuthApi } from "@/infrastructure/auth/api/AuthApi";
+import { getAccessToken, onSessionCleared } from "@/infrastructure/auth/session/AuthSessionStorage";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import * as SecureStore from "expo-secure-store";
 import React from "react";
@@ -53,8 +54,55 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: React.PropsWithChildren) {
   const [actor, setActor] = React.useState<Actor | null>(null);
 
+  React.useEffect(() => onSessionCleared(() => setActor(null)), []);
+
+  // Inicializar actor cuando la app se abre
+  React.useEffect(() => {
+    const initializeAuth = async () => {
+      const token = await getAccessToken();
+
+      if (__DEV__) {
+        console.log("[AUTH INIT]", token ? "Token encontrado al abrir app" : "Sin token");
+      }
+
+      if (!token) {
+        setActor(null);
+        return;
+      }
+
+      if (token === DEMO_MODERATOR_TOKEN) {
+        setActor(demoModerator);
+        return;
+      }
+
+      if (token === DEMO_ADMIN_TOKEN) {
+        setActor(demoAdmin);
+        return;
+      }
+
+      if (token.startsWith(LOCAL_ACCOUNT_TOKEN_PREFIX)) {
+        const id = token.slice(LOCAL_ACCOUNT_TOKEN_PREFIX.length);
+        const account = (await getLocalDemoAccounts()).find((item) => item.id === id);
+        if (account) {
+          const localActor: Actor = { id: account.id, capacities: account.capacities, platformRole: account.platformRole };
+          setActor(localActor);
+          return;
+        }
+      }
+
+      try {
+        const currentActor = await new AuthApi(new FetchHttpClient()).getCurrentActor();
+        setActor(currentActor);
+      } catch (error) {
+        setActor(null);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
   const refreshActor = React.useCallback(async () => {
-    const token = await SecureStore.getItemAsync("accessToken");
+    const token = await getAccessToken();
     if (!token) {
       setActor(null);
       return null;

@@ -1,11 +1,11 @@
 import type { SignInInput } from "@/domain/auth/repositories/AuthRepository";
 import { AuthApi } from "@/infrastructure/auth/api/AuthApi";
+import { saveAccessToken, saveSession } from "@/infrastructure/auth/session/AuthSessionStorage";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import { InputPer } from "@/presentation/components/shared/Input";
 import { DEMO_ADMIN_EMAIL, DEMO_ADMIN_TOKEN, DEMO_MODERATOR_EMAIL, DEMO_MODERATOR_TOKEN, getLocalDemoAccounts } from "@/presentation/providers/AuthProvider";
 import { parseApiError } from "@/presentation/utils/parseApiError";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,21 +29,18 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       if (email.trim().toLowerCase() === DEMO_MODERATOR_EMAIL && password === "Moderador123!") {
-        await SecureStore.setItemAsync("accessToken", DEMO_MODERATOR_TOKEN);
-        await SecureStore.deleteItemAsync("refreshToken");
+        await saveAccessToken(DEMO_MODERATOR_TOKEN);
         router.replace("/");
         return;
       }
       if (email.trim().toLowerCase() === DEMO_ADMIN_EMAIL && password === "Admin123!") {
-        await SecureStore.setItemAsync("accessToken", DEMO_ADMIN_TOKEN);
-        await SecureStore.deleteItemAsync("refreshToken");
+        await saveAccessToken(DEMO_ADMIN_TOKEN);
         router.replace("/");
         return;
       }
       const localAccount = (await getLocalDemoAccounts()).find((account) => account.email.toLowerCase() === email.trim().toLowerCase() && account.password === password);
       if (localAccount) {
-        await SecureStore.setItemAsync("accessToken", `cerca-local-account:${localAccount.id}`);
-        await SecureStore.deleteItemAsync("refreshToken");
+        await saveAccessToken(`cerca-local-account:${localAccount.id}`);
         router.replace("/");
         return;
       }
@@ -52,8 +49,7 @@ export default function SignInScreen() {
       const api = new AuthApi(client);
       const input: SignInInput = { email: email.trim(), password };
       const session = await api.signIn(input);
-      await SecureStore.setItemAsync("accessToken", session.accessToken);
-      await SecureStore.setItemAsync("refreshToken", session.refreshToken);
+      await saveSession(session);
       console.log("signed in", session.actor);
       router.replace("/");
     } catch (e) {

@@ -1,10 +1,10 @@
 import type { SignUpInput } from "@/domain/auth/repositories/AuthRepository";
 import { AuthApi } from "@/infrastructure/auth/api/AuthApi";
+import { saveSession } from "@/infrastructure/auth/session/AuthSessionStorage";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import { InputPer } from "@/presentation/components/shared/Input";
 import { parseApiError } from "@/presentation/utils/parseApiError";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,8 +39,7 @@ export default function SignUpScreen() {
         capacities: ["customer"],
       };
       const session = await api.signUp(payload);
-      await SecureStore.setItemAsync("accessToken", session.accessToken);
-      await SecureStore.setItemAsync("refreshToken", session.refreshToken);
+      await saveSession(session);
       console.log("signed up", session.actor);
       router.replace("/");
     } catch (e) {

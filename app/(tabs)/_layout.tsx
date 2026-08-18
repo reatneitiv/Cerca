@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { View, ActivityIndicator } from 'react-native';
+import { getAccessToken, onSessionCleared } from '@/infrastructure/auth/session/AuthSessionStorage';
 import { BottomNavbar } from '@/presentation/components/BottomNavbar';
 import { canModerateListings, hasCapacity } from '@/domain/auth/entities/Actor';
 import { useAuth } from '@/presentation/providers/AuthProvider';
@@ -16,13 +16,18 @@ export default function TabLayout() {
     let mounted = true;
     (async () => {
       try {
-        const token = await SecureStore.getItemAsync('accessToken');
+        const token = await getAccessToken();
         if (!mounted) return;
         if (!token) {
           router.replace('/sign-in');
         } else {
-          await refreshActor();
-          if (mounted) setChecking(false);
+          const currentActor = await refreshActor();
+          if (!mounted) return;
+          if (!currentActor) {
+            router.replace('/sign-in');
+          } else {
+            setChecking(false);
+          }
         }
       } catch (_e) {
         if (mounted) router.replace('/sign-in');
@@ -33,6 +38,8 @@ export default function TabLayout() {
       mounted = false;
     };
   }, [refreshActor, router]);
+
+  useEffect(() => onSessionCleared(() => router.replace('/sign-in')), [router]);
 
   if (checking) return (
     <View className="flex-1 items-center justify-center">
