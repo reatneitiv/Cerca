@@ -85,8 +85,10 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
       setActor(currentActor);
       return currentActor;
     } catch (error) {
+      // Token inválido o expirado - FetchHttpClient ya lo limpió
+      // No lanzar error, solo retornar null
       setActor(null);
-      throw error;
+      return null;
     }
   }, []);
 
