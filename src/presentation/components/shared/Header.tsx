@@ -1,8 +1,8 @@
 import { Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-// Componente del Logo SVG en el color de tu marca
-function AppLogo({ size = 36, color = "#087F5B" }: { size?: number; color?: string }) {
+// Logo reutilizable de la aplicación.
+export function AppLogo({ size = 36, color = "#087F5B" }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
       {/* Parte superior (techo / A) */}
@@ -30,16 +30,6 @@ export function Header() {
         </Text>
       </View>
 
-      {/* SECCIÓN DERECHA: SALUDO + AVATAR */}
-      <View className="flex-row items-center space-x-2.5">
-        <Text className="text-sm font-medium text-[#71717A]">
-          Hello, Estiven
-        </Text>
-
-        <View className="h-[42px] w-[42px] items-center justify-center rounded-full bg-app-primary-soft">
-          <Text className="text-[17px] font-extrabold text-app-primary">E</Text>
-        </View>
-      </View>
     </View>
   );
 }

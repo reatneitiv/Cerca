@@ -5,10 +5,10 @@ import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 
 
 import type { ListingDetail, ListingStatus } from "@/domain/entities/listing.entity";
 import type { Review } from "@/domain/entities/review.entity";
-import { useFavorites } from "@/presentation/providers/FavoritesProvider";
-import { useAuth } from "@/presentation/providers/AuthProvider";
 import { BookingApi } from "@/infrastructure/api/BookingApi";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
+import { useAuth } from "@/presentation/providers/AuthProvider";
+import { useFavorites } from "@/presentation/providers/FavoritesProvider";
 import { parseApiError } from "@/presentation/utils/parseApiError";
 import { getListingByIdUseCase, getListingReviewsUseCase } from "@/shared/container/container";
 
@@ -22,7 +22,9 @@ function formatPrice(price: ListingDetail["priceFrom"]): string {
 }
 
 export default function ListingDetailScreen() {
-  const { id, request } = useLocalSearchParams<{ id: string; request?: string }>();
+  const params = useLocalSearchParams<{ id: string; request?: string }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const request = Array.isArray(params.request) ? params.request[0] : params.request;
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function ListingDetailScreen() {
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) {
+    if (!id || typeof id !== "string") {
       setError("No pudimos abrir este servicio. Inténtalo de nuevo.");
       setLoading(false);
       return;

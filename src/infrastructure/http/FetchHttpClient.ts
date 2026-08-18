@@ -9,12 +9,24 @@ if (!API_URL) {
 
 export class HttpError extends Error {
   public readonly status: number;
+  public readonly statusText: string;
   public readonly body: unknown;
+  public readonly method: string;
+  public readonly url: string;
 
-  constructor(status: number, body: unknown) {
-    super(`HTTP ${status}`);
+  constructor(
+    status: number,
+    statusText: string,
+    body: unknown,
+    method: string,
+    url: string
+  ) {
+    super(`HTTP ${status} ${statusText}`);
     this.status = status;
+    this.statusText = statusText;
     this.body = body;
+    this.method = method;
+    this.url = url;
   }
 }
 
@@ -26,22 +38,78 @@ async function parseJsonSafe(response: Response) {
   }
 }
 
+async function getResponseBody(response: Response): Promise<unknown> {
+  const contentType = response.headers.get("content-type");
+  
+  if (!contentType) return null;
+  
+  if (contentType.includes("application/json")) {
+    return parseJsonSafe(response);
+  }
+  
+  if (contentType.includes("text")) {
+    return await response.text();
+  }
+  
+  // Para otros tipos, intenta JSON primero, luego texto
+  const json = await parseJsonSafe(response);
+  if (json !== null) return json;
+  
+  try {
+    return await response.text();
+  } catch {
+    return null;
+  }
+}
+
+function logHttpError(
+  method: string,
+  url: string,
+  status: number,
+  statusText: string,
+  body: unknown,
+  hasAuth: boolean
+): void {
+  // Solo loguear en desarrollo
+  const isDev = typeof __DEV__ !== "undefined" ? __DEV__ : process.env.NODE_ENV === "development";
+  
+  if (!isDev) return;
+  
+  console.error(
+    "[HTTP ERROR]",
+    "\n" +
+    `Method: ${method}\n` +
+    `URL: ${url}\n` +
+    `Status: ${status} ${statusText}\n` +
+    `Authentication: ${hasAuth ? "Bearer [REDACTED]" : "none"}\n` +
+    `Response Body:\n${JSON.stringify(body, null, 2)}`
+  );
+}
+
 export class FetchHttpClient implements HttpClient {
   async get<T>(path: string): Promise<T> {
     const token = await SecureStore.getItemAsync("accessToken");
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    const response = await fetch(`${API_URL}${path}`, { headers });
+    
+    const fullUrl = `${API_URL}${path}`;
+    const response = await fetch(fullUrl, { headers });
 
     if (!response.ok) {
-      const body = await parseJsonSafe(response);
+      const responseBody = await getResponseBody(response);
+      logHttpError("GET", fullUrl, response.status, response.statusText, responseBody, !!token);
+      
       if (response.status === 401) {
         await SecureStore.deleteItemAsync("accessToken");
         await SecureStore.deleteItemAsync("refreshToken");
       }
-      throw new HttpError(response.status, body);
+      throw new HttpError(response.status, response.statusText, responseBody, "GET", fullUrl);
     }
 
-    return response.json() as Promise<T>;
+    const responseBody = await getResponseBody(response);
+    if (responseBody === null || responseBody === "") {
+      return {} as T;
+    }
+    return responseBody as T;
   }
 
   async post<T>(path: string, body?: unknown, extraHeaders?: Record<string, string>): Promise<T> {
@@ -51,22 +119,38 @@ export class FetchHttpClient implements HttpClient {
       ...extraHeaders,
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch(`${API_URL}${path}`, {
+    
+    const fullUrl = `${API_URL}${path}`;
+    const response = await fetch(fullUrl, {
       method: "POST",
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
-      const parsed = await parseJsonSafe(response);
+      const responseBody = await getResponseBody(response);
+      logHttpError("POST", fullUrl, response.status, response.statusText, responseBody, !!token);
+      
       if (response.status === 401) {
         await SecureStore.deleteItemAsync("accessToken");
         await SecureStore.deleteItemAsync("refreshToken");
       }
-      throw new HttpError(response.status, parsed);
+      throw new HttpError(response.status, response.statusText, responseBody, "POST", fullUrl);
     }
 
-    return response.json() as Promise<T>;
+    // Manejar respuestas 204 No Content
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    const responseBody = await getResponseBody(response);
+    
+    // Si no hay body, retornar null o {}
+    if (responseBody === null || responseBody === "") {
+      return {} as T;
+    }
+
+    return responseBody as T;
   }
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
@@ -75,41 +159,65 @@ export class FetchHttpClient implements HttpClient {
       "Content-Type": "application/json",
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch(`${API_URL}${path}`, {
+    
+    const fullUrl = `${API_URL}${path}`;
+    const response = await fetch(fullUrl, {
       method: "PATCH",
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
-      const parsed = await parseJsonSafe(response);
+      const responseBody = await getResponseBody(response);
+      logHttpError("PATCH", fullUrl, response.status, response.statusText, responseBody, !!token);
+      
       if (response.status === 401) {
         await SecureStore.deleteItemAsync("accessToken");
         await SecureStore.deleteItemAsync("refreshToken");
       }
-      throw new HttpError(response.status, parsed);
+      throw new HttpError(response.status, response.statusText, responseBody, "PATCH", fullUrl);
     }
 
-    return response.json() as Promise<T>;
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    const responseBody = await getResponseBody(response);
+    if (responseBody === null || responseBody === "") {
+      return {} as T;
+    }
+    return responseBody as T;
   }
 
   async delete<T>(path: string): Promise<T> {
     const token = await SecureStore.getItemAsync("accessToken");
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    const response = await fetch(`${API_URL}${path}`, {
+    
+    const fullUrl = `${API_URL}${path}`;
+    const response = await fetch(fullUrl, {
       method: "DELETE",
       headers,
     });
 
     if (!response.ok) {
-      const parsed = await parseJsonSafe(response);
+      const responseBody = await getResponseBody(response);
+      logHttpError("DELETE", fullUrl, response.status, response.statusText, responseBody, !!token);
+      
       if (response.status === 401) {
         await SecureStore.deleteItemAsync("accessToken");
         await SecureStore.deleteItemAsync("refreshToken");
       }
-      throw new HttpError(response.status, parsed);
+      throw new HttpError(response.status, response.statusText, responseBody, "DELETE", fullUrl);
     }
 
-    return response.json() as Promise<T>;
+    if (response.status === 204) {
+      return null as T;
+    }
+
+    const responseBody = await getResponseBody(response);
+    if (responseBody === null || responseBody === "") {
+      return {} as T;
+    }
+    return responseBody as T;
   }
 }

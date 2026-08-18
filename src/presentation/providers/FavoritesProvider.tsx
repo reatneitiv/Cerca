@@ -1,4 +1,11 @@
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type PropsWithChildren,
+} from "react";
 
 import type { ListingSummary } from "@/domain/entities/listing.entity";
 
@@ -10,23 +17,29 @@ interface FavoritesContextValue {
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
-export function FavoritesProvider({ children }: { children: React.ReactNode }) {
+export function FavoritesProvider({ children }: PropsWithChildren) {
   const [favorites, setFavorites] = useState<ListingSummary[]>([]);
 
-  const isFavorite = (listingId: string) => favorites.some((listing) => listing.id === listingId);
+  const isFavorite = useCallback(
+    (listingId: string) => favorites.some((listing) => listing.id === listingId),
+    [favorites]
+  );
 
-  const toggleFavorite = (listing: ListingSummary) => {
+  const toggleFavorite = useCallback((listing: ListingSummary) => {
     setFavorites((currentFavorites) =>
       currentFavorites.some((favorite) => favorite.id === listing.id)
         ? currentFavorites.filter((favorite) => favorite.id !== listing.id)
         : [...currentFavorites, listing]
     );
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ favorites, isFavorite, toggleFavorite }),
+    [favorites, isFavorite, toggleFavorite]
+  );
 
   return (
-    <FavoritesContext.Provider value={{ favorites, isFavorite, toggleFavorite }}>
-      {children}
-    </FavoritesContext.Provider>
+    <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>
   );
 }
 

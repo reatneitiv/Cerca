@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { hasCapacity } from "@/domain/auth/entities/Actor";
 import type { Category } from "@/domain/entities/category.entity";
 import type { ListingSummary } from "@/domain/entities/listing.entity";
@@ -6,7 +5,8 @@ import { ListingApi } from "@/infrastructure/api/ListingApi";
 import { FetchHttpClient } from "@/infrastructure/http/FetchHttpClient";
 import { useAuth } from "@/presentation/providers/AuthProvider";
 import { parseApiError } from "@/presentation/utils/parseApiError";
-import { getCategoriesUseCase } from "@/shared/container/container";
+import { getCategoriesUseCase, getCurrentLocationUseCase } from "@/shared/container/container";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -50,29 +50,69 @@ export default function ProviderScreen() {
   }, [isProvider, loadMyListings]);
 
   async function handlePublish() {
-    const amount = Number(price.replace(",", "."));
-    const hours = Number(minimumHours);
-    const needsPrice = pricingModel !== "quote" || price.trim().length > 0;
-    if (!title.trim() || !description.trim() || !selectedCategory || (needsPrice && (!Number.isFinite(amount) || amount <= 0)) || (pricingModel === "hourly" && (!Number.isInteger(hours) || hours < 1))) {
-      setMessage("Completa los campos requeridos con valores válidos.");
+    if (!title.trim() || !description.trim() || !selectedCategory) {
+      setMessage("Completa todos los campos requeridos.");
       return;
+    }
+
+    const amount = price.trim() ? Number(price.replace(",", ".")) : 0;
+    const hours = pricingModel === "hourly" ? Number(minimumHours) : 1;
+
+    if (pricingModel === "fixed" && (!Number.isFinite(amount) || amount <= 0)) {
+      setMessage("Ingresa un precio válido mayor a 0.");
+      return;
+    }
+    if (pricingModel === "hourly") {
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setMessage("Ingresa una tarifa por hora válida.");
+        return;
+      }
+      if (!Number.isInteger(hours) || hours < 1) {
+        setMessage("Las horas mínimas deben ser un número entero mayor a 0.");
+        return;
+      }
     }
 
     setSubmitting(true);
     setMessage(null);
     try {
+      // Obtener ubicación del usuario
+      let location;
+      try {
+        location = await getCurrentLocationUseCase.execute();
+      } catch (locationError) {
+        if (
+          locationError instanceof Error &&
+          locationError.message === "LOCATION_PERMISSION_DENIED"
+        ) {
+          setMessage("Activa el permiso de ubicación para publicar un servicio.");
+        } else {
+          setMessage("No pudimos obtener tu ubicación. Inténtalo de nuevo.");
+        }
+        setSubmitting(false);
+        return;
+      }
+
       const api = new ListingApi(new FetchHttpClient());
+      
+      let pricing;
+      if (pricingModel === "fixed") {
+        pricing = { model: "fixed" as const, price: { amountMinor: Math.round(amount * 100), currency: "COP" } };
+      } else if (pricingModel === "hourly") {
+        pricing = { model: "hourly" as const, hourlyRate: { amountMinor: Math.round(amount * 100), currency: "COP" }, minimumHours: hours };
+      } else {
+        pricing = { 
+          model: "quote" as const, 
+          startingFrom: amount > 0 ? { amountMinor: Math.round(amount * 100), currency: "COP" } : undefined
+        };
+      }
+
       const listing = await api.create({
         title: title.trim(),
         description: description.trim(),
         categoryId: selectedCategory,
-        pricing: pricingModel === "fixed"
-          ? { model: "fixed", price: { amountMinor: Math.round(amount), currency: "COP" } }
-          : pricingModel === "hourly"
-            ? { model: "hourly", hourlyRate: { amountMinor: Math.round(amount), currency: "COP" }, minimumHours: hours }
-            : price.trim()
-              ? { model: "quote", startingFrom: { amountMinor: Math.round(amount), currency: "COP" } }
-              : { model: "quote" },
+        location,
+        pricing,
       });
       await api.publish(listing.id);
       setTitle("");

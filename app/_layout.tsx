@@ -17,7 +17,7 @@ export default function RootLayout() {
         <FavoritesProvider>
           <SafeAreaProvider>
             <StatusBar style="dark" />
-            <Stack>
+            <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             </Stack>
           </SafeAreaProvider>

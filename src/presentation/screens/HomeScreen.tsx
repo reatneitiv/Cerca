@@ -8,7 +8,7 @@ import type { Coordinates } from "@/domain/repositories/location.repository";
 import type { PaginatedResponse } from "@/domain/entities/listing.entity";
 import type { Listing } from '@/domain/entities/listing.entity';
 
-import { Header } from "@/presentation/components/shared/Header";
+import { AppLogo } from "@/presentation/components/shared/Header";
 import { CategoriesSection } from "@/presentation/components/CategoriesSection";
 import { ListingCard } from "@/presentation/components/ListingCard";
 import { SearchBar } from "@/presentation/components/shared/SearchBar";
@@ -158,7 +158,12 @@ export default function HomeScreen() {
         // Parte superior de la pantalla
         ListHeaderComponent={
           <View className="px-5 pb-4">
-            <Header />
+            <View className="flex-row items-center py-2">
+              <AppLogo size={40} />
+              <Text className="ml-3 text-3xl font-black tracking-[-1px] text-slate-900">
+                Cerca
+              </Text>
+            </View>
 
             <Text className="mt-1.5 max-w-[300px] text-[15px] leading-[22px] text-slate-500">
               Encuentra el servicio que necesitas, justo donde estás.
