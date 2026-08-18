@@ -26,18 +26,14 @@ export class HttpError extends Error {
 }
 
 async function getResponseBody(response: Response): Promise<unknown> {
-  const contentType = response.headers.get("content-type") ?? "";
+  const responseText = await response.text();
+  if (!responseText) return null;
 
-  if (contentType.includes("application/json")) {
-    try {
-      return await response.json();
-    } catch {
-      return null;
-    }
+  try {
+    return JSON.parse(responseText) as unknown;
+  } catch {
+    return responseText;
   }
-
-  if (contentType.includes("text")) return response.text();
-  return null;
 }
 
 function isDevelopment(): boolean {
@@ -139,15 +135,18 @@ export class FetchHttpClient implements HttpClient {
       return (responseBody === null || responseBody === "" ? {} : responseBody) as T;
     }
 
+    const canRefresh = response.status === 401 && Boolean(token) && !isAuthEndpoint(path) && !retried;
+    if (canRefresh) {
+      if (isDevelopment()) console.log("[AUTH] Access token rechazado; intentando renovarlo");
+      if (await this.refreshAccessToken()) {
+        return this.request<T>(method, path, body, extraHeaders, true);
+      }
+    }
+
     const responseBody = await getResponseBody(response);
     logHttpError(method, fullUrl, response, responseBody, Boolean(token));
 
-    const canRefresh = response.status === 401 && Boolean(token) && !isAuthEndpoint(path) && !retried;
-    if (canRefresh && await this.refreshAccessToken()) {
-      return this.request<T>(method, path, body, extraHeaders, true);
-    }
-
-    if (response.status === 401 && token && !retried && !isAuthEndpoint(path)) {
+    if (response.status === 401 && token && !isAuthEndpoint(path)) {
       await clearSession();
     }
 
