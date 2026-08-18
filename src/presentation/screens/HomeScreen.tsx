@@ -3,38 +3,40 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Category } from "@/domain/entities/category.entity";
-import type { ListingSummary } from "@/domain/entities/listing.entity";
+import type { Listing, ListingSummary, PaginatedResponse } from "@/domain/entities/listing.entity";
 import type { Coordinates } from "@/domain/repositories/location.repository";
-import type { PaginatedResponse } from "@/domain/entities/listing.entity";
-import type { Listing } from '@/domain/entities/listing.entity';
 
-import { AppLogo } from "@/presentation/components/shared/Header";
 import { CategoriesSection } from "@/presentation/components/CategoriesSection";
 import { ListingCard } from "@/presentation/components/ListingCard";
+import { AppLogo } from "@/presentation/components/shared/Header";
 import { SearchBar } from "@/presentation/components/shared/SearchBar";
 
 import { developmentSearchCoordinates } from "@//infrastructure/config/search-location.config";
-import { getCategoriesUseCase, getCurrentLocationUseCase, getListingsUseCase } from "@/shared/container/container";
+import {
+  getCategoriesUseCase,
+  getCurrentLocationUseCase,
+  getListingsUseCase,
+} from "@/shared/container/container";
 
 export default function HomeScreen() {
   const [coordinates, setCoordinates] = useState<Coordinates | null>(
-    developmentSearchCoordinates
+    developmentSearchCoordinates,
   );
   const [listings, setListings] = useState<ListingSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null,
+  );
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Estados de carga y error
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadingMoreRef = useRef(false);
 
-  // Obtiene la ubicación del usuario
   useEffect(() => {
     // Si estamos usando una ubicación de desarrollo, no usamos el GPS
     if (developmentSearchCoordinates) {
@@ -52,7 +54,9 @@ export default function HomeScreen() {
           caughtError instanceof Error &&
           caughtError.message === "LOCATION_PERMISSION_DENIED"
         ) {
-          setError("Activa el permiso de ubicación para ver servicios cerca de ti.");
+          setError(
+            "Activa el permiso de ubicación para ver servicios cerca de ti.",
+          );
         } else {
           setError("No pudimos conocer tu ubicación. Inténtalo de nuevo.");
         }
@@ -64,7 +68,6 @@ export default function HomeScreen() {
       });
   }, []);
 
-  // Carga el catálogo una vez: las categorías no dependen de la búsqueda.
   useEffect(() => {
     getCategoriesUseCase
       .execute()
@@ -74,14 +77,12 @@ export default function HomeScreen() {
       });
   }, []);
 
-  // Busca los servicios cuando cambia la ubicación o búsqueda
   useEffect(() => {
     if (!coordinates) return;
 
     let isCurrentRequest = true;
     setNextCursor(null);
 
-    // Espera 300ms antes de hacer la petición
     const timeout = setTimeout(() => {
       setIsLoading(true);
       setError(null);
@@ -103,14 +104,15 @@ export default function HomeScreen() {
         .catch((caughtError: unknown) => {
           if (!isCurrentRequest) return;
           console.error("Error cargando servicios:", caughtError);
-          setError("No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo.");
+          setError(
+            "No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo.",
+          );
         })
         .finally(() => {
           if (isCurrentRequest) setIsLoading(false);
         });
     }, 300);
 
-    // Cancela el timeout anterior
     return () => {
       isCurrentRequest = false;
       clearTimeout(timeout);
@@ -145,17 +147,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      className="flex-1 bg-[#F7FAFC]"
-    >
+    <SafeAreaView edges={["top"]} className="flex-1 bg-[#F7FAFC]">
       <FlatList
         data={listings}
         keyExtractor={(listing) => listing.id}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View className="h-3.5" />}
-
-        // Parte superior de la pantalla
         ListHeaderComponent={
           <View className="px-5 pb-4">
             <View className="flex-row items-center py-2">
@@ -169,12 +166,8 @@ export default function HomeScreen() {
               Encuentra el servicio que necesitas, justo donde estás.
             </Text>
 
-            {/* Buscador */}
             <View className="mt-6 rounded-[24px] bg-[#EAF8F3] p-3.5">
-              <SearchBar
-                onChangeText={setSearchQuery}
-                value={searchQuery}
-              />
+              <SearchBar onChangeText={setSearchQuery} value={searchQuery} />
             </View>
 
             <CategoriesSection
@@ -183,7 +176,6 @@ export default function HomeScreen() {
               onSelectCategory={setSelectedCategoryId}
             />
 
-            {/* Título y cantidad de servicios */}
             <View className="mb-1 mt-7 flex-row items-center justify-between">
               <View>
                 <Text className="text-[20px] font-extrabold tracking-[-0.4px] text-[#102A43]">
@@ -191,7 +183,9 @@ export default function HomeScreen() {
                 </Text>
 
                 <Text className="mt-[3px] text-[13px] text-slate-400">
-                  {selectedCategoryId ? "Resultados de esta categoría" : "Resultados cerca de ti"}
+                  {selectedCategoryId
+                    ? "Resultados de esta categoría"
+                    : "Resultados cerca de ti"}
                 </Text>
               </View>
 
@@ -203,8 +197,6 @@ export default function HomeScreen() {
             </View>
           </View>
         }
-
-        // Mensaje cuando no hay resultados
         ListEmptyComponent={
           <View className="mt-6 items-center px-5">
             <Text className="text-center text-sm text-slate-500">
@@ -212,7 +204,7 @@ export default function HomeScreen() {
                 ? "Buscando tu ubicación..."
                 : isLoading
                   ? "Cargando servicios..."
-                  : error ?? "No encontramos servicios en esta zona."}
+                  : (error ?? "No encontramos servicios en esta zona.")}
             </Text>
 
             {!locationLoading && !isLoading && error && coordinates && (
@@ -226,7 +218,6 @@ export default function HomeScreen() {
             )}
           </View>
         }
-
         ListFooterComponent={
           isLoadingMore ? (
             <Text className="py-6 text-center text-sm text-slate-500">
@@ -234,7 +225,6 @@ export default function HomeScreen() {
             </Text>
           ) : null
         }
-
         // Tarjeta de cada servicio
         renderItem={({ item }) => (
           <View className="px-5">
