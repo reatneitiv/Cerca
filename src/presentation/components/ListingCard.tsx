@@ -1,188 +1,164 @@
-import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-
-import type { Listing } from "@/src/domain/entities/listing.entity";
+import type {
+  ListingStatus,
+  ListingSummary,
+} from "@/domain/entities/listing.entity";
+import { appColors } from "@/shared/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Pressable, Text, View } from "react-native";
+import { canModerateListings } from "@/domain/auth/entities/Actor";
+import { useAuth } from "@/presentation/providers/AuthProvider";
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: ListingSummary;
 }
 
-const priceFormatter = new Intl.NumberFormat("es-CO", {
-  maximumFractionDigits: 0,
-});
+const minorUnits: Record<string, number> = {
+  COP: 0,
+  CLP: 0,
+  JPY: 0,
+  USD: 2,
+  EUR: 2,
+  GBP: 2,
+  MXN: 2,
+  BRL: 2,
+  KWD: 3,
+};
+
+const statusLabels: Record<ListingStatus, string> = {
+  draft: "Borrador",
+  published: "Publicado",
+  paused: "Pausado",
+  under_review: "En revisión",
+  removed: "Retirado",
+};
+
+function formatPrice(price: ListingSummary["priceFrom"]): string {
+  if (!price) {
+    return "Precio por cotizar";
+  }
+
+  const decimals = minorUnits[price.currency] ?? 2;
+
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: price.currency,
+    maximumFractionDigits: decimals,
+  }).format(price.amountMinor / 10 ** decimals);
+}
+
+function formatDistance(distanceMeters: number): string {
+  if (distanceMeters < 1000) {
+    return `${Math.round(distanceMeters)} m`;
+  }
+
+  return `${(distanceMeters / 1000).toFixed(1)} km`;
+}
 
 export function ListingCard({ listing }: ListingCardProps) {
-  const [isSaved, setIsSaved] = useState(false);
+  const router = useRouter();
+  const { actor } = useAuth();
+  const isModerator = actor ? canModerateListings(actor) : false;
+
+  const filledStars = Math.round(Math.max(0, Math.min(5, listing.ratingAvg)));
+
+  function handlePress() {
+    router.push(`/listing/${listing.id}`);
+  }
+
+  function handleRequest() {
+    router.push({ pathname: "/listing/[id]", params: { id: listing.id, request: "1" } });
+  }
+
+  function handleModerate() {
+    router.push({ pathname: "/moderation", params: { listingId: listing.id } });
+  }
 
   return (
-    <View style={styles.card}>
-      <Image source={{ uri: listing.imageUrl }} style={styles.image} />
+    <Pressable
+      accessibilityLabel={`Ver detalles de ${listing.title}`}
+      accessibilityRole="button"
+      onPress={handlePress}
+      className="rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm active:opacity-85"
+    >
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text className="text-[11px] font-bold uppercase tracking-[0.25px] text-app-primary">
+            {statusLabels[listing.status]}
+          </Text>
 
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Text style={styles.availability}>Profesional disponible</Text>
-          <Pressable
-            accessibilityLabel={isSaved ? "Quitar de guardados" : "Guardar servicio"}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSaved }}
-            hitSlop={8}
-            onPress={() => setIsSaved((currentValue) => !currentValue)}
-            style={({ pressed }) => [
-              styles.saveButton,
-              isSaved && styles.saveButtonActive,
-              pressed && styles.saveButtonPressed,
-            ]}
+          <Text
+            numberOfLines={2}
+            className="mt-1 text-[17px] font-bold text-slate-900"
           >
-            <Text style={[styles.saveIcon, isSaved && styles.saveIconActive]}>
-              {isSaved ? "★" : "☆"}
+            {listing.title}
+          </Text>
+          {isModerator ? (
+            <Text selectable className="mt-1 text-[11px] text-slate-500">
+              ID: {listing.id}
             </Text>
-          </Pressable>
-        </View>
-        <Text numberOfLines={1} style={styles.title}>
-          {listing.title}
-        </Text>
-
-        <View style={styles.ratingRow} accessibilityLabel="Calificación con estrellas">
-          <Text style={styles.stars}>★★★★★</Text>
+          ) : null}
         </View>
 
-        <View style={styles.footer}>
-          <View>
-            <Text style={styles.priceLabel}>DESDE</Text>
-            <Text style={styles.price}>
-              $ {priceFormatter.format(listing.price.amount)}
-              <Text style={styles.currency}> {listing.price.currency}</Text>
-            </Text>
-          </View>
+        <View className="flex-row items-center">
+          <View className="flex-row items-center rounded-[10px] bg-slate-100 px-2 py-1">
+            <Ionicons name="location" size={13} color={appColors.primaryDark} />
 
-          <View style={styles.distanceBadge}>
-            <Text style={styles.pin}>●</Text>
-            <Text style={styles.distance}>{listing.distance}</Text>
+            <Text className="ml-1 text-[11px] font-bold text-slate-600">
+              {formatDistance(listing.distanceMeters)}
+            </Text>
           </View>
         </View>
       </View>
-    </View>
+
+      <View className="mt-3 flex-row items-center justify-between">
+        <View>
+          <Text className="text-[9px] font-extrabold uppercase tracking-[0.8px] text-slate-400">
+            Desde
+          </Text>
+
+          <Text className="mt-px text-[15px] font-extrabold text-slate-900">
+            {formatPrice(listing.priceFrom)}
+          </Text>
+        </View>
+
+        <View className="items-end">
+          <View className="flex-row">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={star <= filledStars ? "star" : "star-outline"}
+                size={15}
+                color={appColors.warning}
+              />
+            ))}
+          </View>
+
+          <Text className="mt-1 text-[11px] text-slate-500">
+            {listing.ratingAvg.toFixed(1)} · {listing.ratingCount} {listing.ratingCount === 1 ? "reseña" : "reseñas"}
+          </Text>
+        </View>
+      </View>
+
+      {isModerator ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Moderar ${listing.title}`}
+          onPress={handleModerate}
+          className="mt-4 items-center rounded-xl bg-[#EAF8F3] px-4 py-2.5 active:opacity-80"
+        >
+          <Text className="text-sm font-bold text-[#087F5B]">Moderar servicio</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Pedir ${listing.title}`}
+          onPress={handleRequest}
+          className="mt-4 items-center rounded-xl bg-[#EAF8F3] px-4 py-2.5 active:opacity-80"
+        >
+          <Text className="text-sm font-bold text-[#087F5B]">Pedir servicio</Text>
+        </Pressable>
+      )}
+    </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#EDF2F7",
-    borderRadius: 20,
-    borderWidth: 1,
-    flexDirection: "row",
-    padding: 12,
-    shadowColor: "#102A43",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  image: {
-    backgroundColor: "#E2E8F0",
-    borderRadius: 15,
-    height: 132,
-    width: 112,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingLeft: 14,
-    paddingVertical: 2,
-  },
-  topRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  availability: {
-    color: "#087F5B",
-    flex: 1,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.25,
-    textTransform: "uppercase",
-  },
-  saveButton: {
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 14,
-    height: 28,
-    justifyContent: "center",
-    marginLeft: 6,
-    width: 28,
-  },
-  saveButtonActive: {
-    backgroundColor: "#FFF4D6",
-  },
-  saveButtonPressed: {
-    opacity: 0.65,
-  },
-  saveIcon: {
-    color: "#64748B",
-    fontSize: 17,
-    lineHeight: 20,
-  },
-  saveIconActive: {
-    color: "#F5A623",
-  },
-  title: {
-    color: "#102A43",
-    fontSize: 17,
-    fontWeight: "700",
-    letterSpacing: -0.25,
-  },
-  ratingRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginTop: 6,
-  },
-  stars: {
-    color: "#F5A623",
-    fontSize: 14,
-    letterSpacing: 1,
-  },
-  footer: {
-    alignItems: "flex-end",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  priceLabel: {
-    color: "#94A3B8",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  price: {
-    color: "#102A43",
-    fontSize: 15,
-    fontWeight: "800",
-    marginTop: 1,
-  },
-  currency: {
-    color: "#64748B",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  distanceBadge: {
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
-    flexDirection: "row",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  pin: {
-    color: "#087F5B",
-    fontSize: 8,
-    marginRight: 5,
-  },
-  distance: {
-    color: "#475569",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-});

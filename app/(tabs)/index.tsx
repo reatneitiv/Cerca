@@ -1,3 +1,5 @@
-import HomeScreen from "@/src/presentation/screens/HomeScreen";
+import HomeScreen from "@/presentation/screens/HomeScreen";
 
-export default HomeScreen;
+export default function Index() {
+  return <HomeScreen />;
+}

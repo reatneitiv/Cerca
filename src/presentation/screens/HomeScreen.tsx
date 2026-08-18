@@ -1,124 +1,249 @@
-import { useEffect, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { Listing } from "@/src/domain/entities/listing.entity";
-import { Header } from "@/src/presentation/components/Header";
-import { ListingCard } from "@/src/presentation/components/ListingCard";
-import { PrimaryButton } from "@/src/presentation/components/PrimaryButton";
-import { SearchBar } from "@/src/presentation/components/SearchBar";
-import { getListingsUseCase } from "@/src/shared/container/container";
+import type { Category } from "@/domain/entities/category.entity";
+import type { ListingSummary } from "@/domain/entities/listing.entity";
+import type { Coordinates } from "@/domain/repositories/location.repository";
+import type { PaginatedResponse } from "@/domain/entities/listing.entity";
+import type { Listing } from '@/domain/entities/listing.entity';
+
+import { AppLogo } from "@/presentation/components/shared/Header";
+import { CategoriesSection } from "@/presentation/components/CategoriesSection";
+import { ListingCard } from "@/presentation/components/ListingCard";
+import { SearchBar } from "@/presentation/components/shared/SearchBar";
+
+import { developmentSearchCoordinates } from "@//infrastructure/config/search-location.config";
+import { getCategoriesUseCase, getCurrentLocationUseCase, getListingsUseCase } from "@/shared/container/container";
 
 export default function HomeScreen() {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(
+    developmentSearchCoordinates
+  );
+  const [listings, setListings] = useState<ListingSummary[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
+  // Estados de carga y error
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const loadingMoreRef = useRef(false);
+
+  // Obtiene la ubicación del usuario
   useEffect(() => {
-    const loadListings = async () => {
-      const data = await getListingsUseCase.execute();
-      setListings(data);
-    };
+    // Si estamos usando una ubicación de desarrollo, no usamos el GPS
+    if (developmentSearchCoordinates) {
+      setLocationLoading(false);
+      return;
+    }
 
-    loadListings();
+    getCurrentLocationUseCase
+      .execute()
+      .then(setCoordinates)
+      .catch((caughtError: unknown) => {
+        console.error("Error obteniendo ubicación:", caughtError);
+
+        if (
+          caughtError instanceof Error &&
+          caughtError.message === "LOCATION_PERMISSION_DENIED"
+        ) {
+          setError("Activa el permiso de ubicación para ver servicios cerca de ti.");
+        } else {
+          setError("No pudimos conocer tu ubicación. Inténtalo de nuevo.");
+        }
+
+        setIsLoading(false);
+      })
+      .finally(() => {
+        setLocationLoading(false);
+      });
   }, []);
 
+  // Carga el catálogo una vez: las categorías no dependen de la búsqueda.
+  useEffect(() => {
+    getCategoriesUseCase
+      .execute()
+      .then(setCategories)
+      .catch((caughtError: unknown) => {
+        console.error("Error cargando categorías:", caughtError);
+      });
+  }, []);
+
+  // Busca los servicios cuando cambia la ubicación o búsqueda
+  useEffect(() => {
+    if (!coordinates) return;
+
+    let isCurrentRequest = true;
+    setNextCursor(null);
+
+    // Espera 300ms antes de hacer la petición
+    const timeout = setTimeout(() => {
+      setIsLoading(true);
+      setError(null);
+
+      getListingsUseCase
+        .execute({
+          lat: coordinates.latitude,
+          lng: coordinates.longitude,
+          query: searchQuery.trim() || undefined,
+          radiusKm: 10,
+          limit: 20,
+          categoryId: selectedCategoryId ?? undefined,
+        })
+        .then((page: PaginatedResponse<Listing>) => {
+          if (!isCurrentRequest) return;
+          setListings(page.items);
+          setNextCursor(page.nextCursor ?? null);
+        })
+        .catch((caughtError: unknown) => {
+          if (!isCurrentRequest) return;
+          console.error("Error cargando servicios:", caughtError);
+          setError("No pudimos cargar los servicios. Revisa tu conexión e inténtalo de nuevo.");
+        })
+        .finally(() => {
+          if (isCurrentRequest) setIsLoading(false);
+        });
+    }, 300);
+
+    // Cancela el timeout anterior
+    return () => {
+      isCurrentRequest = false;
+      clearTimeout(timeout);
+    };
+  }, [coordinates, searchQuery, selectedCategoryId, reloadKey]);
+
+  const loadMoreListings = async () => {
+    if (!coordinates || !nextCursor || loadingMoreRef.current) return;
+
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const page = await getListingsUseCase.execute({
+        lat: coordinates.latitude,
+        lng: coordinates.longitude,
+        query: searchQuery.trim() || undefined,
+        radiusKm: 10,
+        limit: 20,
+        categoryId: selectedCategoryId ?? undefined,
+        cursor: nextCursor,
+      });
+
+      setListings((currentListings) => [...currentListings, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (caughtError) {
+      console.error("Error cargando más servicios:", caughtError);
+    } finally {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+    <SafeAreaView
+      edges={["top"]}
+      className="flex-1 bg-[#F7FAFC]"
+    >
       <FlatList
-        contentContainerStyle={styles.content}
         data={listings}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
         keyExtractor={(listing) => listing.id}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View className="h-3.5" />}
+
+        // Parte superior de la pantalla
         ListHeaderComponent={
-          <View>
-            <Header />
-            <Text style={styles.intro}>
+          <View className="px-5 pb-4">
+            <View className="flex-row items-center py-2">
+              <AppLogo size={40} />
+              <Text className="ml-3 text-3xl font-black tracking-[-1px] text-slate-900">
+                Cerca
+              </Text>
+            </View>
+
+            <Text className="mt-1.5 max-w-[300px] text-[15px] leading-[22px] text-slate-500">
               Encuentra el servicio que necesitas, justo donde estás.
             </Text>
 
-            <View style={styles.searchSection}>
-              <SearchBar />
-              <View style={styles.buttonSpacing}>
-                <PrimaryButton />
-              </View>
+            {/* Buscador */}
+            <View className="mt-6 rounded-[24px] bg-[#EAF8F3] p-3.5">
+              <SearchBar
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+              />
             </View>
 
-            <View style={styles.sectionHeader}>
+            <CategoriesSection
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={setSelectedCategoryId}
+            />
+
+            {/* Título y cantidad de servicios */}
+            <View className="mb-1 mt-7 flex-row items-center justify-between">
               <View>
-                <Text style={styles.sectionTitle}>Servicios disponibles</Text>
-                <Text style={styles.sectionSubtitle}>Profesionales cerca de ti</Text>
+                <Text className="text-[20px] font-extrabold tracking-[-0.4px] text-[#102A43]">
+                  Servicios disponibles
+                </Text>
+
+                <Text className="mt-[3px] text-[13px] text-slate-400">
+                  {selectedCategoryId ? "Resultados de esta categoría" : "Resultados cerca de ti"}
+                </Text>
               </View>
-              <View style={styles.countBadge}>
-                <Text style={styles.countText}>{listings.length}</Text>
+
+              <View className="h-7 min-w-7 items-center justify-center rounded-[14px] bg-[#DDF5ED] px-2">
+                <Text className="text-xs font-extrabold text-[#087F5B]">
+                  {listings.length} cargados
+                </Text>
               </View>
             </View>
           </View>
         }
-        renderItem={({ item }) => <ListingCard listing={item} />}
-        showsVerticalScrollIndicator={false}
+
+        // Mensaje cuando no hay resultados
+        ListEmptyComponent={
+          <View className="mt-6 items-center px-5">
+            <Text className="text-center text-sm text-slate-500">
+              {locationLoading
+                ? "Buscando tu ubicación..."
+                : isLoading
+                  ? "Cargando servicios..."
+                  : error ?? "No encontramos servicios en esta zona."}
+            </Text>
+
+            {!locationLoading && !isLoading && error && coordinates && (
+              <Pressable
+                accessibilityRole="button"
+                className="mt-4 rounded-xl bg-primary px-4 py-2 active:opacity-90"
+                onPress={() => setReloadKey((currentKey) => currentKey + 1)}
+              >
+                <Text className="font-bold text-white">Reintentar</Text>
+              </Pressable>
+            )}
+          </View>
+        }
+
+        ListFooterComponent={
+          isLoadingMore ? (
+            <Text className="py-6 text-center text-sm text-slate-500">
+              Cargando más servicios...
+            </Text>
+          ) : null
+        }
+
+        // Tarjeta de cada servicio
+        renderItem={({ item }) => (
+          <View className="px-5">
+            <ListingCard listing={item} />
+          </View>
+        )}
+        onEndReached={loadMoreListings}
+        onEndReachedThreshold={0.5}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: "#F7FAFC",
-    flex: 1,
-  },
-  content: {
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-    paddingTop: 14,
-  },
-  intro: {
-    color: "#64748B",
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 6,
-    maxWidth: 300,
-  },
-  searchSection: {
-    backgroundColor: "#EAF8F3",
-    borderRadius: 24,
-    marginTop: 24,
-    padding: 14,
-  },
-  buttonSpacing: {
-    marginTop: 12,
-  },
-  sectionHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    marginTop: 30,
-  },
-  sectionTitle: {
-    color: "#102A43",
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.4,
-  },
-  sectionSubtitle: {
-    color: "#94A3B8",
-    fontSize: 13,
-    marginTop: 3,
-  },
-  countBadge: {
-    alignItems: "center",
-    backgroundColor: "#DDF5ED",
-    borderRadius: 14,
-    height: 28,
-    justifyContent: "center",
-    minWidth: 28,
-    paddingHorizontal: 8,
-  },
-  countText: {
-    color: "#087F5B",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  separator: {
-    height: 14,
-  },
-});

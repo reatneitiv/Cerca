@@ -1,12 +1,9 @@
-import type { Listing } from "@/src/domain/entities/listing.entity";
-import type { ListingRepository } from "@/src/domain/repositories/listing.repository";
+import type { ListingSearchParams, ListingRepository } from "@/domain/repositories/listing.repository";
 
 export class GetListingsUseCase {
-  constructor(
-    private readonly listingRepository: ListingRepository,
-  ) {}
+  constructor(private readonly listingRepository: ListingRepository) {}
 
-  async execute(): Promise<Listing[]> {
-    return this.listingRepository.findAll();
+  async execute(params: ListingSearchParams) {
+    return this.listingRepository.findAll(params);
   }
 }
